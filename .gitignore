@@ -1,0 +1,29 @@
+# Build artifacts
+*.apk
+*.flatpak
+*.img
+*.bin
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Kernel / build output
+build/
+out/
+*.o
+*.ko
+*.ko.zst
+*.dtb
+
+# Evidence that should remain local unless deliberately curated
+private-evidence/
+raw-evidence/
+backups/
+rollback/
+
+# Editor / OS noise
+.DS_Store
+*~
+*.swp
+*.swo

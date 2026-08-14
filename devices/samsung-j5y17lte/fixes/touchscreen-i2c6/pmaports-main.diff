@@ -1,0 +1,44 @@
+--- a/device/testing/linux-postmarketos-exynos7870/APKBUILD
++++ b/device/testing/linux-postmarketos-exynos7870/APKBUILD
+@@ -3,5 +3,5 @@
+ pkgname=linux-postmarketos-exynos7870
+ pkgver=6.15
+-pkgrel=6
++pkgrel=7
+ pkgdesc="Close-to-mainline kernel for Samsung Exynos 7870 devices"
+ arch="aarch64"
+@@ -38,4 +38,5 @@
+ 	linux-$pkgver.tar.gz::https://cdn.kernel.org/pub/linux/kernel/v$_kmajver.x/linux-$pkgver.tar.gz
+ 	patches-$_commit.tar.gz::https://gitlab.com/$_owner/$_repo/-/archive/$_commit/$_repo-$_commit.tar.gz
++	j5y17lte-touchscreen-i2c6.patch.manual
+ 	$_config
+ "
+@@ -65,4 +66,7 @@
+ 		fi
+ 	done
++
++	# The external devicetrees are copied above, so apply this afterwards.
++	patch -p1 < "$srcdir/j5y17lte-touchscreen-i2c6.patch.manual"
+ }
+ 
+@@ -96,4 +100,5 @@
+ a12a16c08c8867397c69c8eeb5a1a9195253cbcce8d0a9cc731c24d027d79040a9d2b598bcc2c6fca0f4a1f019216e652d2fc1a00025b15c064b7165a61ee9c3  linux-6.15.tar.gz
+ 6ae251c24451851480a44f754cc1c7d07aef698c177b850c5f45f7018c767803c4609add27e5d9a747140e692180ad76f057e471cf0d3038e05050e40d8ea6db  patches-5686e3b545bd34e80ec6e73604b8819d10e52a2c.tar.gz
++8c7002af4a23858c1587f1706282c374b401099d965540a07157639d421b24e466f1d3974dd223abed06464065916ede28b154ea0dca8fba166922272d6a1552  j5y17lte-touchscreen-i2c6.patch.manual
+ 8601e1eb16aa0e3f9ddc52f8ef719c3c882759c80fc391aafa0ca900247368f21e3d0244f44922bab7fafbf705811cf4c91877c098af562685dbb054322377ba  config-postmarketos-exynos7870.aarch64
+ "
+--- /dev/null
++++ b/device/testing/linux-postmarketos-exynos7870/j5y17lte-touchscreen-i2c6.patch.manual
+@@ -0,0 +1,12 @@
++diff --git a/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts b/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
++--- a/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
+++++ b/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
++@@ -378,7 +378,7 @@
++ 	};
++ };
++ 
++-&i2c2 {
+++&i2c6 {
++ 	#address-cells = <1>;
++ 	#size-cells = <0>;
++ 

@@ -1,0 +1,12 @@
+diff --git a/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts b/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
+--- a/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
++++ b/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
+@@ -378,7 +378,7 @@
+ 	};
+ };
+ 
+-&i2c2 {
++&i2c6 {
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 
