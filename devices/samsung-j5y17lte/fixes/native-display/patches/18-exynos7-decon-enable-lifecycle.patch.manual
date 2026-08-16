@@ -1,0 +1,18 @@
+--- a/drivers/gpu/drm/exynos/exynos7_drm_decon.c
++++ b/drivers/gpu/drm/exynos/exynos7_drm_decon.c
+@@ -579,13 +579,13 @@
+ 
+ 	decon_init(ctx);
+ 
++	ctx->suspended = false;
++
+ 	/* if vblank was enabled status, enable it again. */
+ 	if (test_and_clear_bit(0, &ctx->irq_flags))
+ 		decon_enable_vblank(ctx->crtc);
+ 
+ 	decon_commit(ctx->crtc);
+-
+-	ctx->suspended = false;
+ }
+ 
+ static void decon_atomic_disable(struct exynos_drm_crtc *crtc)

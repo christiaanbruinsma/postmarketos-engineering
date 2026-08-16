@@ -1,0 +1,29 @@
+From 7ef93667ab19370a2a05b8dbcad36d76b887ff38 Mon Sep 17 00:00:00 2001
+From: Kaustabh Chakraborty <kauschluss@disroot.org>
+Date: Sun, 6 Jul 2025 23:55:43 +0530
+Subject: [PATCH] drm/bridge: samsung-dsim: increase timeout value for
+ PLL_STABLE
+
+Exynos7870's DSIM requires more time to stabilize its PLL. The current
+timeout value, 1000, doesn't suffice. Increase the value to 3000, which
+is just about enough as observed experimentally.
+
+Signed-off-by: Kaustabh Chakraborty <kauschluss@disroot.org>
+Signed-off-by: Inki Dae <inki.dae@samsung.com>
+---
+ drivers/gpu/drm/bridge/samsung-dsim.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/bridge/samsung-dsim.c b/drivers/gpu/drm/bridge/samsung-dsim.c
+index 456d961abc057e..2e422f3ec1033d 100644
+--- a/drivers/gpu/drm/bridge/samsung-dsim.c
++++ b/drivers/gpu/drm/bridge/samsung-dsim.c
+@@ -755,7 +755,7 @@ static unsigned long samsung_dsim_set_pll(struct samsung_dsim *dsi,
+ 
+ 	samsung_dsim_write(dsi, DSIM_PLLCTRL_REG, reg);
+ 
+-	timeout = 1000;
++	timeout = 3000;
+ 	do {
+ 		if (timeout-- == 0) {
+ 			dev_err(dsi->dev, "PLL failed to stabilize\n");

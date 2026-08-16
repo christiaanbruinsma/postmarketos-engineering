@@ -1,0 +1,12 @@
+--- a/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
++++ b/arch/arm64/boot/dts/exynos/exynos7870-j5y17lte.dts
+@@ -544,6 +544,9 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 
++	samsung,esc-clock-frequency = <16000000>;
++	samsung,pll-clock-frequency = <26000000>;
++
+ 	status = "okay";
+ 
+ 	panel@0 {

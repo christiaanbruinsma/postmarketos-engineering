@@ -1,0 +1,40 @@
+From 472df181d7c4c732d5c5b98d506d1902e7580acb Mon Sep 17 00:00:00 2001
+From: Kaustabh Chakraborty <kauschluss@disroot.org>
+Date: Sun, 6 Jul 2025 23:55:47 +0530
+Subject: [PATCH] drm/exynos: dsi: add support for exynos7870
+
+Add glue layer support for Exynos7870's DSIM IP bridge driver.
+
+Signed-off-by: Kaustabh Chakraborty <kauschluss@disroot.org>
+Signed-off-by: Inki Dae <inki.dae@samsung.com>
+---
+ drivers/gpu/drm/exynos/exynos_drm_dsi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/gpu/drm/exynos/exynos_drm_dsi.c b/drivers/gpu/drm/exynos/exynos_drm_dsi.c
+index 896a03639e2d9b..c4d098ab786389 100644
+--- a/drivers/gpu/drm/exynos/exynos_drm_dsi.c
++++ b/drivers/gpu/drm/exynos/exynos_drm_dsi.c
+@@ -154,6 +154,11 @@ static const struct samsung_dsim_plat_data exynos5433_dsi_pdata = {
+ 	.host_ops = &exynos_dsi_exynos_host_ops,
+ };
+ 
++static const struct samsung_dsim_plat_data exynos7870_dsi_pdata = {
++	.hw_type = DSIM_TYPE_EXYNOS7870,
++	.host_ops = &exynos_dsi_exynos_host_ops,
++};
++
+ static const struct of_device_id exynos_dsi_of_match[] = {
+ 	{
+ 		.compatible = "samsung,exynos3250-mipi-dsi",
+@@ -175,6 +180,10 @@ static const struct of_device_id exynos_dsi_of_match[] = {
+ 		.compatible = "samsung,exynos5433-mipi-dsi",
+ 		.data = &exynos5433_dsi_pdata,
+ 	},
++	{
++		.compatible = "samsung,exynos7870-mipi-dsi",
++		.data = &exynos7870_dsi_pdata,
++	},
+ 	{ /* sentinel. */ }
+ };
+ MODULE_DEVICE_TABLE(of, exynos_dsi_of_match);

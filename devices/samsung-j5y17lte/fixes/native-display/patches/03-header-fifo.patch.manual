@@ -1,0 +1,104 @@
+From 92beab1a397d80d04d90f511c6d0af696da67a33 Mon Sep 17 00:00:00 2001
+From: Kaustabh Chakraborty <kauschluss@disroot.org>
+Date: Sun, 6 Jul 2025 23:55:37 +0530
+Subject: [PATCH] drm/bridge: samsung-dsim: add flag to control header FIFO
+ wait
+
+Exynos7870's DSIM device doesn't require waiting for the header FIFO
+during a MIPI DSI transfer. Add a flag in the driver data in order to
+control said behavior.
+
+Signed-off-by: Kaustabh Chakraborty <kauschluss@disroot.org>
+Signed-off-by: Inki Dae <inki.dae@samsung.com
+---
+ drivers/gpu/drm/bridge/samsung-dsim.c | 15 ++++++++++++---
+ include/drm/bridge/samsung-dsim.h     |  1 +
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/samsung-dsim.c b/drivers/gpu/drm/bridge/samsung-dsim.c
+index 49c4456ebd235a..dd6c99dada89e7 100644
+--- a/drivers/gpu/drm/bridge/samsung-dsim.c
++++ b/drivers/gpu/drm/bridge/samsung-dsim.c
+@@ -418,6 +418,7 @@ static const struct samsung_dsim_driver_data exynos3_dsi_driver_data = {
+ 	.has_clklane_stop = 1,
+ 	.num_clks = 2,
+ 	.max_freq = 1000,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.pll_p_offset = 13,
+@@ -438,6 +439,7 @@ static const struct samsung_dsim_driver_data exynos4_dsi_driver_data = {
+ 	.has_clklane_stop = 1,
+ 	.num_clks = 2,
+ 	.max_freq = 1000,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.pll_p_offset = 13,
+@@ -456,6 +458,7 @@ static const struct samsung_dsim_driver_data exynos5_dsi_driver_data = {
+ 	.has_legacy_status_reg = 1,
+ 	.num_clks = 2,
+ 	.max_freq = 1000,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.pll_p_offset = 13,
+@@ -474,6 +477,7 @@ static const struct samsung_dsim_driver_data exynos5433_dsi_driver_data = {
+ 	.has_clklane_stop = 1,
+ 	.num_clks = 5,
+ 	.max_freq = 1500,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
+ 	.pll_p_offset = 13,
+@@ -492,6 +496,7 @@ static const struct samsung_dsim_driver_data exynos5422_dsi_driver_data = {
+ 	.has_clklane_stop = 1,
+ 	.num_clks = 2,
+ 	.max_freq = 1500,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 12,
+ 	.pll_p_offset = 13,
+@@ -510,6 +515,7 @@ static const struct samsung_dsim_driver_data imx8mm_dsi_driver_data = {
+ 	.has_clklane_stop = 1,
+ 	.num_clks = 2,
+ 	.max_freq = 2100,
++	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
+ 	/*
+@@ -1117,6 +1123,7 @@ static void samsung_dsim_send_to_fifo(struct samsung_dsim *dsi,
+ {
+ 	struct device *dev = dsi->dev;
+ 	struct mipi_dsi_packet *pkt = &xfer->packet;
++	const struct samsung_dsim_driver_data *driver_data = dsi->driver_data;
+ 	const u8 *payload = pkt->payload + xfer->tx_done;
+ 	u16 length = pkt->payload_length - xfer->tx_done;
+ 	bool first = !xfer->tx_done;
+@@ -1157,9 +1164,11 @@ static void samsung_dsim_send_to_fifo(struct samsung_dsim *dsi,
+ 		return;
+ 
+ 	reg = get_unaligned_le32(pkt->header);
+-	if (samsung_dsim_wait_for_hdr_fifo(dsi)) {
+-		dev_err(dev, "waiting for header FIFO timed out\n");
+-		return;
++	if (driver_data->wait_for_hdr_fifo) {
++		if (samsung_dsim_wait_for_hdr_fifo(dsi)) {
++			dev_err(dev, "waiting for header FIFO timed out\n");
++			return;
++		}
+ 	}
+ 
+ 	if (NEQV(xfer->flags & MIPI_DSI_MSG_USE_LPM,
+diff --git a/include/drm/bridge/samsung-dsim.h b/include/drm/bridge/samsung-dsim.h
+index f0c1e5c5ed490a..62c07952bd00f9 100644
+--- a/include/drm/bridge/samsung-dsim.h
++++ b/include/drm/bridge/samsung-dsim.h
+@@ -61,6 +61,7 @@ struct samsung_dsim_driver_data {
+ 	unsigned int num_clks;
+ 	unsigned int min_freq;
+ 	unsigned int max_freq;
++	unsigned int wait_for_hdr_fifo;
+ 	unsigned int wait_for_reset;
+ 	unsigned int num_bits_resol;
+ 	unsigned int pll_p_offset;

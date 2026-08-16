@@ -1,0 +1,101 @@
+From f7754d843a05c685ba453be176a29ae157f88b0c Mon Sep 17 00:00:00 2001
+From: Kaustabh Chakraborty <kauschluss@disroot.org>
+Date: Sun, 6 Jul 2025 23:55:42 +0530
+Subject: [PATCH] drm/bridge: samsung-dsim: allow configuring the PLL_STABLE
+ bit
+
+The PLL_STABLE bit of DSIM_DPHY_STATUS is hardcoded to BIT(31), but
+Exynos7870's DSIM has it in BIT(24) as per downstream kernel sources.
+
+In order to support both, move this bit value to the driver data struct
+and define it for every driver compatible. Reference the value from
+there instead, in functions wherever required.
+
+Signed-off-by: Kaustabh Chakraborty <kauschluss@disroot.org>
+Signed-off-by: Inki Dae <inki.dae@samsung.com>
+---
+ drivers/gpu/drm/bridge/samsung-dsim.c | 9 +++++++--
+ include/drm/bridge/samsung-dsim.h     | 1 +
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/samsung-dsim.c b/drivers/gpu/drm/bridge/samsung-dsim.c
+index 2884b3b7dc7331..456d961abc057e 100644
+--- a/drivers/gpu/drm/bridge/samsung-dsim.c
++++ b/drivers/gpu/drm/bridge/samsung-dsim.c
+@@ -35,7 +35,6 @@
+ #define DSIM_STOP_STATE_DAT(x)		(((x) & 0xf) << 0)
+ #define DSIM_STOP_STATE_CLK		BIT(8)
+ #define DSIM_TX_READY_HS_CLK		BIT(10)
+-#define DSIM_PLL_STABLE			BIT(31)
+ 
+ /* DSIM_SWRST */
+ #define DSIM_FUNCRST			BIT(16)
+@@ -415,6 +414,7 @@ static const struct samsung_dsim_driver_data exynos3_dsi_driver_data = {
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -445,6 +445,7 @@ static const struct samsung_dsim_driver_data exynos4_dsi_driver_data = {
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -473,6 +474,7 @@ static const struct samsung_dsim_driver_data exynos5_dsi_driver_data = {
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -501,6 +503,7 @@ static const struct samsung_dsim_driver_data exynos5433_dsi_driver_data = {
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -529,6 +532,7 @@ static const struct samsung_dsim_driver_data exynos5422_dsi_driver_data = {
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 12,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -557,6 +561,7 @@ static const struct samsung_dsim_driver_data imx8mm_dsi_driver_data = {
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
+ 	.video_mode_bit = 25,
++	.pll_stable_bit = 31,
+ 	.esc_clken_bit = 28,
+ 	.byte_clken_bit = 24,
+ 	.tx_req_hsclk_bit = 31,
+@@ -760,7 +765,7 @@ static unsigned long samsung_dsim_set_pll(struct samsung_dsim *dsi,
+ 			reg = samsung_dsim_read(dsi, DSIM_STATUS_REG);
+ 		else
+ 			reg = samsung_dsim_read(dsi, DSIM_LINK_STATUS_REG);
+-	} while ((reg & DSIM_PLL_STABLE) == 0);
++	} while ((reg & BIT(driver_data->pll_stable_bit)) == 0);
+ 
+ 	dsi->hs_clock = fout;
+ 
+diff --git a/include/drm/bridge/samsung-dsim.h b/include/drm/bridge/samsung-dsim.h
+index 000ada3ece4d61..04ed11787bbd22 100644
+--- a/include/drm/bridge/samsung-dsim.h
++++ b/include/drm/bridge/samsung-dsim.h
+@@ -65,6 +65,7 @@ struct samsung_dsim_driver_data {
+ 	unsigned int wait_for_reset;
+ 	unsigned int num_bits_resol;
+ 	unsigned int video_mode_bit;
++	unsigned int pll_stable_bit;
+ 	unsigned int esc_clken_bit;
+ 	unsigned int byte_clken_bit;
+ 	unsigned int tx_req_hsclk_bit;

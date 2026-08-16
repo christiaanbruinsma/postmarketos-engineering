@@ -1,0 +1,207 @@
+From f6ba4c1577a8184105133a79b5d1b6d465158362 Mon Sep 17 00:00:00 2001
+From: Kaustabh Chakraborty <kauschluss@disroot.org>
+Date: Sun, 6 Jul 2025 23:55:38 +0530
+Subject: [PATCH] drm/bridge: samsung-dsim: allow configuring bits and offsets
+ of CLKCTRL register
+
+DSIM_CLKCTRL bit and offset values hardcoded in the driver:
+
+name                      | bit/offset value
+--------------------------+-----------------
+DSIM_LANE_ESC_CLK_EN_CLK  | 19
+DSIM_LANE_ESC_CLK_EN_DATA | 20
+DSIM_BYTE_CLKEN           | 24
+DSIM_ESC_CLKEN            | 28
+DSIM_TX_REQUEST_HSCLK     | 31
+
+DSIM_CLKCTRL bit and offset values in Exynos7870 DSIM as per downstream
+kernel sources:
+
+name                      | bit/offset value
+--------------------------+-----------------
+DSIM_LANE_ESC_CLK_EN_CLK  | 8
+DSIM_LANE_ESC_CLK_EN_DATA | 9
+DSIM_BYTE_CLKEN           | 17
+DSIM_ESC_CLKEN            | 16
+DSIM_TX_REQUEST_HSCLK     | 20
+
+In order to support both, move all values to the driver data struct and
+define it for every driver compatible. Reference the values from there
+instead, in functions wherever required.
+
+Signed-off-by: Kaustabh Chakraborty <kauschluss@disroot.org>
+Signed-off-by: Inki Dae <inki.dae@samsung.com>
+---
+ drivers/gpu/drm/bridge/samsung-dsim.c | 76 +++++++++++++++++++--------
+ include/drm/bridge/samsung-dsim.h     |  5 ++
+ 2 files changed, 59 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/samsung-dsim.c b/drivers/gpu/drm/bridge/samsung-dsim.c
+index dd6c99dada89e7..72190787ff13a0 100644
+--- a/drivers/gpu/drm/bridge/samsung-dsim.c
++++ b/drivers/gpu/drm/bridge/samsung-dsim.c
+@@ -46,17 +46,13 @@
+ #define DSIM_BTA_TIMEOUT(x)		((x) << 16)
+ 
+ /* DSIM_CLKCTRL */
+-#define DSIM_ESC_PRESCALER(x)		(((x) & 0xffff) << 0)
+-#define DSIM_ESC_PRESCALER_MASK		(0xffff << 0)
+-#define DSIM_LANE_ESC_CLK_EN_CLK	BIT(19)
+-#define DSIM_LANE_ESC_CLK_EN_DATA(x)	(((x) & 0xf) << 20)
+-#define DSIM_LANE_ESC_CLK_EN_DATA_MASK	(0xf << 20)
+-#define DSIM_BYTE_CLKEN			BIT(24)
+-#define DSIM_BYTE_CLK_SRC(x)		(((x) & 0x3) << 25)
+-#define DSIM_BYTE_CLK_SRC_MASK		(0x3 << 25)
+-#define DSIM_PLL_BYPASS			BIT(27)
+-#define DSIM_ESC_CLKEN			BIT(28)
+-#define DSIM_TX_REQUEST_HSCLK		BIT(31)
++#define DSIM_ESC_PRESCALER(x)			(((x) & 0xffff) << 0)
++#define DSIM_ESC_PRESCALER_MASK			(0xffff << 0)
++#define DSIM_LANE_ESC_CLK_EN_DATA(x, offset)	(((x) & 0xf) << offset)
++#define DSIM_LANE_ESC_CLK_EN_DATA_MASK(offset)	(0xf << offset)
++#define DSIM_BYTE_CLK_SRC(x)			(((x) & 0x3) << 25)
++#define DSIM_BYTE_CLK_SRC_MASK			(0x3 << 25)
++#define DSIM_PLL_BYPASS				BIT(27)
+ 
+ /* DSIM_CONFIG */
+ #define DSIM_LANE_EN_CLK		BIT(0)
+@@ -421,6 +417,11 @@ static const struct samsung_dsim_driver_data exynos3_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	.pll_p_offset = 13,
+ 	.reg_values = reg_values,
+ 	.pll_fin_min = 6,
+@@ -442,6 +443,11 @@ static const struct samsung_dsim_driver_data exynos4_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	.pll_p_offset = 13,
+ 	.reg_values = reg_values,
+ 	.pll_fin_min = 6,
+@@ -461,6 +467,11 @@ static const struct samsung_dsim_driver_data exynos5_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 11,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	.pll_p_offset = 13,
+ 	.reg_values = reg_values,
+ 	.pll_fin_min = 6,
+@@ -480,6 +491,11 @@ static const struct samsung_dsim_driver_data exynos5433_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	.pll_p_offset = 13,
+ 	.reg_values = exynos5433_reg_values,
+ 	.pll_fin_min = 6,
+@@ -499,6 +515,11 @@ static const struct samsung_dsim_driver_data exynos5422_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 1,
+ 	.num_bits_resol = 12,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	.pll_p_offset = 13,
+ 	.reg_values = exynos5422_reg_values,
+ 	.pll_fin_min = 6,
+@@ -518,6 +539,11 @@ static const struct samsung_dsim_driver_data imx8mm_dsi_driver_data = {
+ 	.wait_for_hdr_fifo = 1,
+ 	.wait_for_reset = 0,
+ 	.num_bits_resol = 12,
++	.esc_clken_bit = 28,
++	.byte_clken_bit = 24,
++	.tx_req_hsclk_bit = 31,
++	.lane_esc_clk_bit = 19,
++	.lane_esc_data_offset = 20,
+ 	/*
+ 	 * Unlike Exynos, PLL_P(PMS_P) offset 14 is used in i.MX8M Mini/Nano/Plus
+ 	 * downstream driver - drivers/gpu/drm/bridge/sec-dsim.c
+@@ -721,6 +747,7 @@ static unsigned long samsung_dsim_set_pll(struct samsung_dsim *dsi,
+ 
+ static int samsung_dsim_enable_clock(struct samsung_dsim *dsi)
+ {
++	const struct samsung_dsim_driver_data *driver_data = dsi->driver_data;
+ 	unsigned long hs_clk, byte_clk, esc_clk, pix_clk;
+ 	unsigned long esc_div;
+ 	u32 reg;
+@@ -754,15 +781,17 @@ static int samsung_dsim_enable_clock(struct samsung_dsim *dsi)
+ 		hs_clk, byte_clk, esc_clk);
+ 
+ 	reg = samsung_dsim_read(dsi, DSIM_CLKCTRL_REG);
+-	reg &= ~(DSIM_ESC_PRESCALER_MASK | DSIM_LANE_ESC_CLK_EN_CLK
+-			| DSIM_LANE_ESC_CLK_EN_DATA_MASK | DSIM_PLL_BYPASS
+-			| DSIM_BYTE_CLK_SRC_MASK);
+-	reg |= DSIM_ESC_CLKEN | DSIM_BYTE_CLKEN
+-			| DSIM_ESC_PRESCALER(esc_div)
+-			| DSIM_LANE_ESC_CLK_EN_CLK
+-			| DSIM_LANE_ESC_CLK_EN_DATA(BIT(dsi->lanes) - 1)
+-			| DSIM_BYTE_CLK_SRC(0)
+-			| DSIM_TX_REQUEST_HSCLK;
++	reg &= ~(DSIM_ESC_PRESCALER_MASK | BIT(driver_data->lane_esc_clk_bit)
++		| DSIM_LANE_ESC_CLK_EN_DATA_MASK(driver_data->lane_esc_data_offset)
++		| DSIM_PLL_BYPASS
++		| DSIM_BYTE_CLK_SRC_MASK);
++	reg |= BIT(driver_data->esc_clken_bit) | BIT(driver_data->byte_clken_bit)
++		| DSIM_ESC_PRESCALER(esc_div)
++		| BIT(driver_data->lane_esc_clk_bit)
++		| DSIM_LANE_ESC_CLK_EN_DATA(BIT(dsi->lanes) - 1,
++					    driver_data->lane_esc_data_offset)
++		| DSIM_BYTE_CLK_SRC(0)
++		| BIT(driver_data->tx_req_hsclk_bit);
+ 	samsung_dsim_write(dsi, DSIM_CLKCTRL_REG, reg);
+ 
+ 	return 0;
+@@ -866,11 +895,14 @@ static void samsung_dsim_set_phy_ctrl(struct samsung_dsim *dsi)
+ 
+ static void samsung_dsim_disable_clock(struct samsung_dsim *dsi)
+ {
++	const struct samsung_dsim_driver_data *driver_data = dsi->driver_data;
+ 	u32 reg;
+ 
+ 	reg = samsung_dsim_read(dsi, DSIM_CLKCTRL_REG);
+-	reg &= ~(DSIM_LANE_ESC_CLK_EN_CLK | DSIM_LANE_ESC_CLK_EN_DATA_MASK
+-			| DSIM_ESC_CLKEN | DSIM_BYTE_CLKEN);
++	reg &= ~(BIT(driver_data->lane_esc_clk_bit)
++		| DSIM_LANE_ESC_CLK_EN_DATA_MASK(driver_data->lane_esc_data_offset)
++		| BIT(driver_data->esc_clken_bit)
++		| BIT(driver_data->byte_clken_bit));
+ 	samsung_dsim_write(dsi, DSIM_CLKCTRL_REG, reg);
+ 
+ 	reg = samsung_dsim_read(dsi, DSIM_PLLCTRL_REG);
+diff --git a/include/drm/bridge/samsung-dsim.h b/include/drm/bridge/samsung-dsim.h
+index 62c07952bd00f9..b1e64c7f993189 100644
+--- a/include/drm/bridge/samsung-dsim.h
++++ b/include/drm/bridge/samsung-dsim.h
+@@ -64,6 +64,11 @@ struct samsung_dsim_driver_data {
+ 	unsigned int wait_for_hdr_fifo;
+ 	unsigned int wait_for_reset;
+ 	unsigned int num_bits_resol;
++	unsigned int esc_clken_bit;
++	unsigned int byte_clken_bit;
++	unsigned int tx_req_hsclk_bit;
++	unsigned int lane_esc_clk_bit;
++	unsigned int lane_esc_data_offset;
+ 	unsigned int pll_p_offset;
+ 	const unsigned int *reg_values;
+ 	unsigned int pll_fin_min;
